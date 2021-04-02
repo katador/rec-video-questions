@@ -5,7 +5,7 @@ import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord";
 class Botones extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {time:this.props.timeText}
+    this.state = {time:"00:00"}
     var _this = this;
     var duration = this.props.timeNumer;
     var timer =  duration,

@@ -42,4 +42,10 @@ export default class MediaUtils {
       localStorage.removeItem(`${name_key_storage}${i}`);
     }
   }
+
+  /** Comprueba que exista la parte inicial del string en local Storage**/
+  static validate_save_storage(name_key_storage){
+    const local = localStorage.getItem(`${name_key_storage}`);
+    return local? true:false;
+  }
 }

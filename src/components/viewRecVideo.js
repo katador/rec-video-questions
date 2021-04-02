@@ -14,17 +14,21 @@ var recordedBlobs;
 var recordedVideo;
 var videoMedia;
 var recordedVideoStorage;
-var tiempoRetro = 5;
-var particion = 10;
+
+var num_partes = 10;
+var wait_time_rec = 5;
+var time_rec_second = 3;
+
+var time_loop_rec_second = (time_rec_second + 1) * 1000;
 
 class ViewRecVideo extends React.Component {
   constructor(props) {
     super(props);
 
-    if (this.validatePlay() && this.props.display) {
-      this.state = { error: "La pregunta fue respondida", reloj: tiempoRetro, cam: false, grabar: false, stop: false, play: true, replay: false, view: true };
+    if (MediaUtils.validate_save_storage(`${this.props.indice}video-0`) && this.props.display) {
+      this.state = { msn_display: "La pregunta fue respondida", countdown: wait_time_rec, cam: false, grabar: false, stop: false, play: true, replay: false, view: true };
     } else {
-      this.state = { error: "", reloj: tiempoRetro, cam: true, grabar: false, stop: false, play: false, replay: false, view: true };
+      this.state = { msn_display: "", countdown: wait_time_rec, cam: true, grabar: false, stop: false, play: false, replay: false, view: true };
     }
     this.playRecording = this.playRecording.bind(this);
     this.playStorageVideo = this.playStorageVideo.bind(this);
@@ -35,7 +39,7 @@ class ViewRecVideo extends React.Component {
     if (this.props.display) {
       return (
         <>
-          {this.state.view && this.state.stop ? <RecDisplay timeText="00:03" timeNumer={3} /> : null}
+          {this.state.view && this.state.stop ? <RecDisplay timeNumer={time_rec_second} /> : null}
           {this.state.view ? (
             <IconButton onClick={this.eventButtonClick} className={this.props.classes.btnPlay}>
               {this.state.cam ? <VideocamIcon /> : null}
@@ -45,16 +49,14 @@ class ViewRecVideo extends React.Component {
               {this.state.play ? <Play /> : null}
             </IconButton>
           ) : null}
-          <>
-            <MsnView error={this.props.classes.error} msn={this.state.error} />
-            {this.state.play ? <video id="mostrar"></video> : <video id="grabar"></video>}
-          </>
+          <MsnView error={this.props.classes.error} msn={this.state.msn_display} />
+          {this.state.play ? <video id="mostrar"></video> : <video id="grabar"></video>}
         </>
       );
     } else {
       return (
         <>
-          {this.validatePlay() ? (
+          {MediaUtils.validate_save_storage(`${this.props.indice}video-0`) ? (
             <>
               <IconButton onClick={this.playStorageVideo} className={this.props.classes.btnPlay}>
                 <Play />
@@ -69,12 +71,12 @@ class ViewRecVideo extends React.Component {
 
   streamCamVideo() {
     var _this = this;
-    this.setState({ error: "Solicitando permisos", reloj: tiempoRetro });
+    this.setState({ msn_display: "Solicitando permisos", countdown: wait_time_rec });
     var constraints = {
       audio: true,
       video: {
-        width: 1024,
-        height: 576,
+        width: 720,
+        height: 480,
       },
     };
     navigator.mediaDevices
@@ -87,40 +89,39 @@ class ViewRecVideo extends React.Component {
         videoMedia.onloadedmetadata = function (e) {
           videoMedia.play();
         };
-        _this.setState({ error: "Camara activada - puedes iniciar la grabación", cam: false, grabar: true, stop: false, play: false, replay: false, view: true });
+        _this.setState({ msn_display: "Camara activada - puedes iniciar la grabación", cam: false, grabar: true, stop: false, play: false, replay: false, view: true });
 
         var timerStream = setInterval(function () {
-          _this.setState({ error: "" });
+          _this.setState({ msn_display: "" });
           clearInterval(timerStream);
         }, 1000);
       })
       .catch(function (err) {
-        _this.setState({ error: "Se requiere permisos: " + err.message });
+        _this.setState({ msn_display: "Se requiere permisos: " + err.message });
       });
   }
-
   startRecording() {
     var _this = this;
     this.setState({ cam: false, grabar: false, stop: false, play: false, replay: false, view: false });
 
-    var refreshIntervalId = setInterval(() => {
-      this.setState({ reloj: this.state.reloj - 1 });
-      this.setState({ error: `La grabación inicia en ${this.state.reloj}` });
+    var countdown_record = setInterval(() => {
+      this.setState({ countdown: this.state.countdown - 1 });
+      this.setState({ msn_display: `La grabación inicia en ${this.state.countdown}` });
 
-      if (this.state.reloj == 1) {
-        clearInterval(refreshIntervalId);
+      if (this.state.countdown == 1) {
+        clearInterval(countdown_record);
 
-        this.setState({ error: "", view: true, stop: true });
+        this.setState({ msn_display: "", view: true, stop: true });
         recordedBlobs = [];
         let options = { mimeType: "video/webm;codecs=vp9,opus" };
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          this.setState({ error: `${options.mimeType} is not supported` });
+          this.setState({ msn_display: `${options.mimeType} is not supported` });
           options = { mimeType: "video/webm;codecs=vp8,opus" };
           if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            this.setState({ error: `${options.mimeType} is not supported` });
+            this.setState({ msn_display: `${options.mimeType} is not supported` });
             options = { mimeType: "video/webm" };
             if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-              this.setState({ error: `${options.mimeType} is not supported` });
+              this.setState({ msn_display: `${options.mimeType} is not supported` });
               options = { mimeType: "" };
             }
           }
@@ -128,22 +129,19 @@ class ViewRecVideo extends React.Component {
         try {
           mediaRecorder = new MediaRecorder(window.stream, options);
         } catch (e) {
-          this.setState({ error: `${e} Exception while creating MediaRecorder:` });
+          this.setState({ msn_display: `${e} Exception while creating MediaRecorder:` });
           return;
         }
-
         mediaRecorder.onstop = (event) => {
-          var _this = this;
           const blob = new Blob(recordedBlobs, { type: "video/webm" });
           var reader = new FileReader();
           reader.readAsDataURL(blob);
           reader.onloadend = function () {
             var base64data = reader.result;
-            let array_slice_video = MediaUtils.divider_string(base64data, particion);
+            let array_slice_video = MediaUtils.divider_string(base64data, num_partes);
             MediaUtils.set_string_storage(array_slice_video, `${_this.props.indice}video-`);
           };
         };
-
         mediaRecorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             recordedBlobs.push(event.data);
@@ -153,9 +151,9 @@ class ViewRecVideo extends React.Component {
 
         var stopStream = setInterval(function () {
           clearInterval(stopStream);
-          _this.setState({ error: "Grabacion terminada" });
+          _this.setState({ msn_display: "Grabacion terminada" });
           _this.stopRecording();
-        }, 4000);
+        }, time_loop_rec_second);
       }
     }, 1000);
   }
@@ -163,10 +161,9 @@ class ViewRecVideo extends React.Component {
     this.setState({ grabar: false, stop: false, play: true, replay: false });
     mediaRecorder.stop();
   }
-
   playRecording() {
     this.setState({ grabar: false, stop: false, play: false, replay: true });
-    const bold = MediaUtils.get_string_storage(particion, `${this.props.indice}video-`);
+    const bold = MediaUtils.get_string_storage(num_partes, `${this.props.indice}video-`);
     recordedVideo = document.getElementById("mostrar");
     recordedVideo.src = null;
     recordedVideo.srcObject = null;
@@ -174,29 +171,18 @@ class ViewRecVideo extends React.Component {
     recordedVideo.controls = true;
     recordedVideo.play();
   }
-
   rePlayRecording() {
-    MediaUtils.remove_string_storage(particion,`${this.props.indice}video-`);
-    this.setState({ error: "", cam: true, grabar: false, stop: false, play: false, replay: false });
+    MediaUtils.remove_string_storage(num_partes, `${this.props.indice}video-`);
+    this.setState({ msn_display: "", cam: true, grabar: false, stop: false, play: false, replay: false });
     this.streamCamVideo();
   }
   playStorageVideo() {
-    const bold = MediaUtils.get_string_storage(particion, `${this.props.indice}video-`);
+    const bold = MediaUtils.get_string_storage(num_partes, `${this.props.indice}video-`);
     recordedVideoStorage = document.getElementById(`${this.props.indice}reproduce`);
     recordedVideoStorage.src = bold;
     recordedVideoStorage.controls = false;
     recordedVideoStorage.play();
   }
-
-  validatePlay() {
-    const local = localStorage.getItem(`${this.props.indice}video-0`);
-    if (local) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   eventButtonClick() {
     let click;
     click = this.state.cam ? this.streamCamVideo() : null;
