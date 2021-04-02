@@ -6,7 +6,7 @@ import StopIcon from "@material-ui/icons/Stop";
 import ReplayIcon from "@material-ui/icons/Replay";
 import RecDisplay from "../components/displayRec.js";
 import VideocamIcon from "@material-ui/icons/Videocam";
-import MediaProvider from "../utils/media_provider.js";
+import MediaUtils from "../utils/media_utils.js";
 import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord";
 
 var mediaRecorder;
@@ -14,7 +14,7 @@ var recordedBlobs;
 var recordedVideo;
 var videoMedia;
 var recordedVideoStorage;
-var tiempoRetro = 3;
+var tiempoRetro = 5;
 var particion = 10;
 
 class ViewRecVideo extends React.Component {
@@ -108,9 +108,8 @@ class ViewRecVideo extends React.Component {
       this.setState({ error: `La grabación inicia en ${this.state.reloj}` });
 
       if (this.state.reloj == 1) {
-        
         clearInterval(refreshIntervalId);
-        
+
         this.setState({ error: "", view: true, stop: true });
         recordedBlobs = [];
         let options = { mimeType: "video/webm;codecs=vp9,opus" };
@@ -140,11 +139,8 @@ class ViewRecVideo extends React.Component {
           reader.readAsDataURL(blob);
           reader.onloadend = function () {
             var base64data = reader.result;
-            let listString = _this.divider_string(base64data,particion);
-            for (var i = 0; i < listString.length; i++){
-              localStorage.setItem(`${_this.props.indice}video-${i}`, listString[i]);
-            }
-        
+            let array_slice_video = MediaUtils.divider_string(base64data, particion);
+            MediaUtils.set_string_storage(array_slice_video, `${_this.props.indice}video-`);
           };
         };
 
@@ -163,27 +159,6 @@ class ViewRecVideo extends React.Component {
       }
     }, 1000);
   }
-
-  divider_string(str, num_partes) {
-    let slong = str.length;
-    let long_partes = parseInt(slong/num_partes);
-    let sobrante = slong % num_partes;
-    let i = 0;
-    let start = 0;
-    let arr2 = [];
-    while(i < num_partes) {
-        if(i < slong) {
-            let offset = (sobrante > 0) ? long_partes+1 : long_partes;
-            arr2[i] =str.substr(start, offset);
-            start += offset;
-            sobrante--;
-        } else {
-            arr2[i] = '';
-        }
-        i++;
-    }
-    return arr2;
-  }
   stopRecording() {
     this.setState({ grabar: false, stop: false, play: true, replay: false });
     mediaRecorder.stop();
@@ -191,32 +166,22 @@ class ViewRecVideo extends React.Component {
 
   playRecording() {
     this.setState({ grabar: false, stop: false, play: false, replay: true });
-    var stringVideo = '';
-    for (var i = 0; i < particion; i++){
-      stringVideo += localStorage.getItem(`${this.props.indice}video-${i}`);
-    }
-    const bold = stringVideo;
+    const bold = MediaUtils.get_string_storage(particion, `${this.props.indice}video-`);
     recordedVideo = document.getElementById("mostrar");
     recordedVideo.src = null;
     recordedVideo.srcObject = null;
     recordedVideo.src = bold;
     recordedVideo.controls = true;
     recordedVideo.play();
-
   }
 
   rePlayRecording() {
-    localStorage.removeItem(`${this.props.indice}video`);
-    this.setState({ error: "", cam: true, grabar: false, stop: false, play: false, replay: false });   
+    MediaUtils.remove_string_storage(particion,`${this.props.indice}video-`);
+    this.setState({ error: "", cam: true, grabar: false, stop: false, play: false, replay: false });
     this.streamCamVideo();
   }
   playStorageVideo() {
-    var stringVideo = '';
-    for (var i = 0; i < particion; i++){
-      stringVideo += localStorage.getItem(`${this.props.indice}video-${i}`);
-    }
-
-    const bold = stringVideo;
+    const bold = MediaUtils.get_string_storage(particion, `${this.props.indice}video-`);
     recordedVideoStorage = document.getElementById(`${this.props.indice}reproduce`);
     recordedVideoStorage.src = bold;
     recordedVideoStorage.controls = false;
@@ -249,9 +214,6 @@ class MsnView extends Component {
   }
 }
 
-
-
-
 const useStyles = (theme) => ({
   btnPlay: {
     position: "absolute",
@@ -264,7 +226,7 @@ const useStyles = (theme) => ({
       color: "white",
     },
   },
-  displayVideo:{
+  displayVideo: {
     position: "absolute",
     left: "-200px",
   },
