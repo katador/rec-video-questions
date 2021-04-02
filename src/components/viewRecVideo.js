@@ -21,10 +21,8 @@ class ViewRecVideo extends React.Component {
     super(props);
 
     if (this.validatePlay() && this.props.display) {
-      console.log("existe video");
       this.state = { error: "La pregunta fue respondida", reloj: tiempoRetro, cam: false, grabar: false, stop: false, play: true, replay: false, view: true };
     } else {
-      console.log("no existe video");
       this.state = { error: "", reloj: tiempoRetro, cam: true, grabar: false, stop: false, play: false, replay: false, view: true };
     }
     this.playRecording = this.playRecording.bind(this);
@@ -33,8 +31,6 @@ class ViewRecVideo extends React.Component {
   }
 
   render() {
-    console.log("state", this.state);
-
     if (this.props.display) {
       return (
         <>
@@ -173,7 +169,6 @@ class ViewRecVideo extends React.Component {
     recordedVideo = document.getElementById("mostrar");
     recordedVideo.src = null;
     recordedVideo.srcObject = null;
-    console.log('centeniodo',recordedVideo);
     recordedVideo.src = bold;
     recordedVideo.controls = true;
     recordedVideo.play();
