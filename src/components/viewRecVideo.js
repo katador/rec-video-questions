@@ -34,7 +34,7 @@ class ViewRecVideo extends React.Component {
     if (this.props.display) {
       return (
         <>
-          {this.state.view && this.state.stop ? <RecDisplay timeText="00:02" timeNumer={2} /> : null}
+          {this.state.view && this.state.stop ? <RecDisplay timeText="00:01" timeNumer={1} /> : null}
           {this.state.view ? (
             <IconButton onClick={this.eventButtonClick} className={this.props.classes.btnPlay}>
               {this.state.cam ? <VideocamIcon /> : null}
@@ -107,7 +107,9 @@ class ViewRecVideo extends React.Component {
       this.setState({ error: `La grabación inicia en ${this.state.reloj}` });
 
       if (this.state.reloj == 1) {
+        
         clearInterval(refreshIntervalId);
+        
         this.setState({ error: "", view: true, stop: true });
         recordedBlobs = [];
         let options = { mimeType: "video/webm;codecs=vp9,opus" };
@@ -152,7 +154,7 @@ class ViewRecVideo extends React.Component {
           clearInterval(stopStream);
           _this.setState({ error: "Grabacion terminada" });
           _this.stopRecording();
-        }, 3000);
+        }, 2000);
       }
     }, 1000);
   }
