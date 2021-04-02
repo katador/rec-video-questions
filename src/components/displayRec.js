@@ -11,7 +11,7 @@ class Botones extends React.Component {
     var timer =  duration,
       minutes,
       seconds;
-    setInterval(function () {
+   var tiempo =  setInterval(function () {
       minutes = parseInt(timer / 60, 10);
       seconds = parseInt(timer % 60, 10);
       minutes = minutes < 10 ? "0" + minutes : minutes;
@@ -19,6 +19,9 @@ class Botones extends React.Component {
       _this.setState({ time:  minutes + ":" + seconds });
       if (--timer < 0) {
         timer = duration;
+      }
+      if(seconds == 0){
+        clearInterval(tiempo)
       }
     }, 1000);
   }
@@ -34,14 +37,18 @@ class Botones extends React.Component {
 const useStyles = (theme) => ({
   displayrec: {
     position: "absolute",
+    backgroundColor:"#3b3b3b6e",
     right: "10px",
     top: "5px",
     fontSize: "11px",
     color: "white",
     display: "flex",
     alignItems: "center",
-    paddingTop: "10px",
+    padding: "2px 5px 2px 10px",
     zIndex: "300",
+    fontWeight:"bold",
+    borderRadius:"9px",
+    marginTop: "10px"
   },
   rec: {
     color: "red",
